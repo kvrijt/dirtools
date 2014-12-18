@@ -368,6 +368,32 @@ class DirState(object):
             return cls(state=json.loads(f.read()))
 
 
+def compute_dir_index(path, hash=False):
+    """ Return a tuple containing:
+    - list of files (relative to path)
+    - lisf of subdirs (relative to path)
+    - a dict: filepath => last or optionally hash
+    """
+    files = []
+    subdirs = []
+
+    for root, dirs, filenames in os.walk(path):
+        for subdir in dirs:
+            subdirs.append(os.path.relpath(os.path.join(root, subdir), path))
+
+        for f in filenames:
+            files.append(os.path.relpath(os.path.join(root, f), path))
+        
+    index = {}
+    for f in files:
+        if hash:
+            index[f] = filehash(os.path.join(path, f))
+        else:
+            index[f] = os.path.getmtime(os.path.join(path, f))
+
+    return dict(files=files, subdirs=subdirs, index=index)
+
+	
 def compute_diff(dir_base, dir_cmp):
     """ Compare `dir_base' and `dir_cmp' and returns a list with
     the following keys:
